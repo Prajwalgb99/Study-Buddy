@@ -1,0 +1,16 @@
+{
+  "name": "study-buddy",
+  "version": "1.0.0",
+  "description": "Agentic RAG Study Assistant - MERN + Gemini + MongoDB Vector Search",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "build": "cd client && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

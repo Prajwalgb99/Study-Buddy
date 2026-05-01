@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-900;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-600 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-500;
+  }
+}
+
+@layer components {
+  /* Reusable button variants */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500
+           text-white font-medium rounded-lg transition-all duration-200
+           disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-600/20;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600
+           text-slate-200 font-medium rounded-lg transition-all duration-200
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20
+           text-red-400 hover:text-red-300 font-medium rounded-lg transition-all duration-200
+           border border-red-500/20 hover:border-red-500/40;
+  }
+
+  /* Input field */
+  .input-field {
+    @apply w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5
+           text-slate-100 placeholder-slate-500 focus:outline-none
+           focus:ring-2 focus:ring-blue-500 focus:border-transparent
+           transition-all duration-200;
+  }
+
+  /* Card */
+  .card {
+    @apply bg-slate-900 border border-slate-800 rounded-xl p-4;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  /* Typing indicator dots */
+  .typing-dot {
+    @apply w-2 h-2 bg-blue-400 rounded-full;
+    animation: pulseDot 1.4s infinite ease-in-out;
+  }
+  .typing-dot:nth-child(1) { animation-delay: 0s; }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+}
+
+/* Markdown-like prose inside AI messages */
+.prose-chat h1, .prose-chat h2, .prose-chat h3 {
+  @apply font-bold text-slate-100 mt-4 mb-2;
+}
+.prose-chat h1 { @apply text-xl; }
+.prose-chat h2 { @apply text-lg; }
+.prose-chat h3 { @apply text-base; }
+.prose-chat p  { @apply mb-3 leading-relaxed; }
+.prose-chat ul { @apply list-disc list-inside space-y-1 mb-3 text-slate-200; }
+.prose-chat ol { @apply list-decimal list-inside space-y-1 mb-3 text-slate-200; }
+.prose-chat li { @apply text-sm leading-relaxed; }
+.prose-chat strong { @apply text-white font-semibold; }
+.prose-chat code {
+  @apply bg-slate-800 text-blue-300 px-1.5 py-0.5 rounded text-sm font-mono;
+}
+.prose-chat pre {
+  @apply bg-slate-800 rounded-lg p-4 overflow-x-auto mb-3;
+}
+.prose-chat pre code {
+  @apply bg-transparent p-0 text-sm;
+}
+.prose-chat blockquote {
+  @apply border-l-4 border-blue-500 pl-4 italic text-slate-400 mb-3;
+}
+.prose-chat hr { @apply border-slate-700 my-4; }
+
+/* SSE stream cursor blink */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.stream-cursor::after {
+  content: '▋';
+  @apply text-blue-400;
+  animation: blink 1s step-end infinite;
+}
