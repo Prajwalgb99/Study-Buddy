@@ -1,8 +1,7 @@
+import 'dotenv/config';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { runStudyAgent } from './agents/studyAgent.js';
-dotenv.config();
 
 async function testAgent() {
   try {

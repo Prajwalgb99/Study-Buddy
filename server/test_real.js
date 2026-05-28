@@ -1,11 +1,8 @@
+import 'dotenv/config';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import dotenv from 'dotenv';
-import path from 'path';
 import mongoose from 'mongoose';
 import Chunk from './models/Chunk.js';
 import { runStudyAgent } from './agents/studyAgent.js';
-
-dotenv.config({ path: path.resolve('p:/study-buddy/server/.env') });
 
 async function testRealChunks() {
   try {
