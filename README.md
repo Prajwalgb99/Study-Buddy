@@ -7,15 +7,28 @@ By leveraging Retrieval-Augmented Generation (RAG), Study Buddy grounds all answ
 ---
 
 ## 📸 Application Screenshots
-*Use these placeholders to upload and show your application screenshots:*
 
 ### 🖥️ Student Dashboard (Document Upload & Management)
-<!-- Space for student dashboard screenshot -->
-![Dashboard Page](placeholder_dashboard.png)
+
+<p align="center">
+  <img src="./screenshots/Dashboard.png" alt="Student Dashboard" width="900">
+</p>
+
+<p align="center">
+<i>Dashboard displaying uploaded study materials, document management, and conversation history.</i>
+</p>
+
+---
 
 ### 💬 Chat Interface (Active Streaming & Source Attributions)
-<!-- Space for chat interface screenshot -->
-![Chat Interface](placeholder_chat.png)
+
+<p align="center">
+  <img src="./screenshots/Chat-interface.png" alt="Chat Interface" width="900">
+</p>
+
+<p align="center">
+<i>AI-powered chat interface with streaming responses, document-grounded answers, and source attributions using Retrieval-Augmented Generation (RAG).</i>
+</p>
 
 ---
 
