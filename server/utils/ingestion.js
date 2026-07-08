@@ -1,19 +1,5 @@
-// ─── server/services/ingestionService.js ─────────────────────────────────────
+// ─── server/utils/ingestion.js ─────────────────────────────────────────────
 // THE CORE RAG PIPELINE: PDF → Text → Chunks → Embeddings → MongoDB
-//
-// Flow:
-//   1. Parse PDF bytes into raw text using pdf-parse
-//   2. Split text into 800-char chunks with 100-char overlap
-//   3. Call Gemini embedding API for each chunk
-//   4. Bulk-insert all chunks with embeddings into MongoDB
-// ──────────────────────────────────────────────────────────────────────────────
-// CHANGE TO:
-// ─── server/services/ingestionService.js ─────────────────────────────────────
-// MEMORY-EFFICIENT VERSION
-// Processes ONE chunk at a time — never holds all embeddings in RAM at once
-// Each chunk is embedded then immediately saved to MongoDB and discarded
-// ──────────────────────────────────────────────────────────────────────────────
-// ─── server/services/ingestionService.js ─────────────────────────────────────
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const pdfParse = require('pdf-parse/lib/pdf-parse.js');
@@ -23,7 +9,6 @@ import Chunk from '../models/Chunk.js';
 import Document from '../models/Document.js';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-// Changed to gemini-embedding-001 (Stable v1)
 const model = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -31,7 +16,6 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function embedOne(text, retries = 4) {
   for (let i = 1; i <= retries; i++) {
     try {
-      // Force output to 768 to match your MongoDB Atlas Index
       const result = await model.embedContent({
         content: { parts: [{ text }] },
         outputDimensionality: 768,
@@ -115,7 +99,7 @@ export async function ingestPDF({ fileBuffer, documentId, userId, docName, subje
       } catch (err) {
         console.error(`\n       chunk ${i + 1} failed: ${err.message?.substring(0, 120)}`);
       }
-      if (i < total - 1) await sleep(4200); // 4.2s delay ensures we stay under 15 RPM limit
+      if (i < total - 1) await sleep(4200); // 4.2s delay to stay under limit
     }
 
     await Document.findByIdAndUpdate(documentId, {

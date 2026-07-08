@@ -24,11 +24,6 @@ const userSchema = new mongoose.Schema(
       minlength: [8, 'Password must be at least 8 characters'],
       select: false,  // Never returned in queries by default
     },
-    role: {
-      type: String,
-      enum: ['user', 'admin'],
-      default: 'user',
-    },
   },
   { timestamps: true }
 );
@@ -67,6 +62,7 @@ const chatHistorySchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     sessionId: { type: String, required: true, unique: true, index: true },
+    documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
     title: { type: String, default: 'New Chat' },
     messages: [messageSchema],
   },

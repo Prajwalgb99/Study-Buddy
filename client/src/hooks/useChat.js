@@ -1,21 +1,16 @@
 // src/hooks/useChat.js
-// ─── Custom hook managing the full streaming chat lifecycle ───────────────────
-//
-// Handles:
-//   - Sending messages to POST /api/chat/stream
-//   - Reading SSE events token by token
-//   - Building the message list reactively
-//   - Source attribution display
-//   - Multi-turn conversation history
-// ──────────────────────────────────────────────────────────────────────────────
+// ─── Custom hook managing the full streaming chat lifecycle + history ────────
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { api } from '../utils/api.jsx';
 
 export function useChat({ documentId } = {}) {
   const [messages,   setMessages]   = useState([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error,      setError]      = useState(null);
   const [sessionId,  setSessionId]  = useState(() => uuidv4());
+  const [sessions,   setSessions]   = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
 
   const abortRef   = useRef(null);   // AbortController for cancelling streams
   const bottomRef  = useRef(null);   // For auto-scrolling
@@ -24,6 +19,73 @@ export function useChat({ documentId } = {}) {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // ── Load all chat sessions ─────────────────────────────────────────────────
+  const loadSessions = useCallback(async () => {
+    setSessionsLoading(true);
+    try {
+      const { data } = await api.get('/chat/sessions');
+      if (data.success) {
+        // If documentId is specified, we can optionally filter or sort
+        // For simplicity and full visibility, we list all sessions
+        setSessions(data.sessions);
+      }
+    } catch (err) {
+      console.error('Failed to load chat sessions:', err);
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, []);
+
+  // Load sessions on mount
+  useEffect(() => {
+    loadSessions();
+  }, [loadSessions]);
+
+  // ── Load history for a specific session ────────────────────────────────────
+  const loadSessionHistory = useCallback(async (selectedSessionId) => {
+    setError(null);
+    setIsStreaming(false);
+    abortRef.current?.abort();
+
+    try {
+      const { data } = await api.get(`/chat/history/${selectedSessionId}`);
+      if (data.success && data.history) {
+        setSessionId(selectedSessionId);
+        // Map database message format to frontend format
+        const formattedMessages = data.history.messages.map((m) => ({
+          id: m._id || uuidv4(),
+          role: m.role,
+          content: m.content,
+          sources: m.sources || [],
+          toolUsed: m.toolsUsed?.[0] || '',
+          timestamp: m.timestamp || new Date(),
+        }));
+        setMessages(formattedMessages);
+      }
+    } catch (err) {
+      console.error('Failed to load chat history:', err);
+      setError(err.response?.data?.error || 'Failed to load chat history.');
+    }
+  }, []);
+
+  // ── Delete a specific session ──────────────────────────────────────────────
+  const deleteSession = useCallback(async (targetSessionId) => {
+    try {
+      const { data } = await api.delete(`/chat/history/${targetSessionId}`);
+      if (data.success) {
+        setSessions((prev) => prev.filter((s) => s.sessionId !== targetSessionId));
+        // If we deleted the active session, reset chat
+        if (sessionId === targetSessionId) {
+          setMessages([]);
+          setSessionId(uuidv4());
+        }
+      }
+    } catch (err) {
+      console.error('Failed to delete session:', err);
+      alert(err.response?.data?.error || 'Failed to delete session.');
+    }
+  }, [sessionId]);
 
   // ── Send a message and stream the response ─────────────────────────────────
   const sendMessage = useCallback(async (question) => {
@@ -93,7 +155,6 @@ export function useChat({ documentId } = {}) {
         buffer = parts.pop();  // Keep incomplete last part in buffer
 
         for (const part of parts) {
-          // Each part starts with "data: "
           const line = part.trim();
           if (!line.startsWith('data:')) continue;
 
@@ -102,7 +163,45 @@ export function useChat({ documentId } = {}) {
 
           try {
             const event = JSON.parse(jsonStr);
-            handleSSEEvent(event, assistantMsgId);
+            switch (event.type) {
+              case 'chunk':
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantMsgId
+                      ? { ...m, content: m.content + event.text }
+                      : m
+                  )
+                );
+                break;
+
+              case 'metadata':
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantMsgId
+                      ? { ...m, sources: event.sources, toolUsed: event.toolUsed, hasResults: event.hasResults }
+                      : m
+                  )
+                );
+                break;
+
+              case 'done':
+                if (event.sessionId) setSessionId(event.sessionId);
+                break;
+
+              case 'error':
+                setError(event.message);
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantMsgId
+                      ? { ...m, content: `Sorry, something went wrong: ${event.message}`, isStreaming: false, isError: true }
+                      : m
+                  )
+                );
+                break;
+
+              default:
+                break;
+            }
           } catch {
             // Skip malformed JSON (keep-alive pings)
           }
@@ -131,60 +230,14 @@ export function useChat({ documentId } = {}) {
         )
       );
       setIsStreaming(false);
+      loadSessions(); // Reload sessions to list new conversation
     }
-  }, [isStreaming, sessionId, documentId]);
-
-  // ── Handle each SSE event type ─────────────────────────────────────────────
-  const handleSSEEvent = useCallback((event, assistantMsgId) => {
-    switch (event.type) {
-      case 'chunk':
-        // Append the streamed token to the assistant message
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantMsgId
-              ? { ...m, content: m.content + event.text }
-              : m
-          )
-        );
-        break;
-
-      case 'metadata':
-        // Sources arrived — update the assistant message with attribution
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantMsgId
-              ? { ...m, sources: event.sources, toolUsed: event.toolUsed, hasResults: event.hasResults }
-              : m
-          )
-        );
-        break;
-
-      case 'done':
-        // Stream complete — update sessionId if server sends one
-        if (event.sessionId) setSessionId(event.sessionId);
-        break;
-
-      case 'error':
-        setError(event.message);
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantMsgId
-              ? { ...m, content: `Sorry, something went wrong: ${event.message}`, isStreaming: false, isError: true }
-              : m
-          )
-        );
-        break;
-
-      default:
-        break;
-    }
-  }, []);
+  }, [isStreaming, sessionId, documentId, loadSessions]);
 
   // ── Cancel an in-progress stream ───────────────────────────────────────────
   const cancelStream = useCallback(() => {
     abortRef.current?.abort();
     setIsStreaming(false);
-    // Mark last assistant message as cancelled
     setMessages((prev) =>
       prev.map((m, i) =>
         i === prev.length - 1 && m.role === 'assistant'
@@ -192,7 +245,8 @@ export function useChat({ documentId } = {}) {
           : m
       )
     );
-  }, []);
+    loadSessions();
+  }, [loadSessions]);
 
   // ── Clear conversation ─────────────────────────────────────────────────────
   const clearChat = useCallback(() => {
@@ -208,9 +262,14 @@ export function useChat({ documentId } = {}) {
     isStreaming,
     error,
     sessionId,
+    sessions,
+    sessionsLoading,
     bottomRef,
     sendMessage,
     cancelStream,
     clearChat,
+    loadSessions,
+    loadSessionHistory,
+    deleteSession,
   };
 }

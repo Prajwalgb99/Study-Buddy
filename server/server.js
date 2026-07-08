@@ -17,6 +17,9 @@ import notesRouter   from './routes/notes.js';
 import chatRouter    from './routes/chat.js';
 import authRouter    from './routes/auth.js';
 
+// Middleware imports
+import { notFound, errorHandler } from './middleware/errorHandler.js';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ─── Connect to MongoDB ───────────────────────────────────────────────────────
@@ -82,26 +85,10 @@ app.get('/api/health', (req, res) => {
 });
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
-app.use((req, res) => {
-  res.status(404).json({ success: false, error: `Route ${req.originalUrl} not found` });
-});
+app.use(notFound);
 
 // ─── Global Error Handler ─────────────────────────────────────────────────────
-// Must have 4 params for Express to recognize as error middleware
-app.use((err, req, res, next) => {  // eslint-disable-line no-unused-vars
-  console.error('Global Error:', err);
-
-  const statusCode = err.statusCode || 500;
-  const message = process.env.NODE_ENV === 'production' && statusCode === 500
-    ? 'An internal server error occurred'
-    : err.message;
-
-  res.status(statusCode).json({
-    success: false,
-    error: message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
-  });
-});
+app.use(errorHandler);
 
 // ─── Start Server ─────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;

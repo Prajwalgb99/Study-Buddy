@@ -261,9 +261,25 @@ export default function DashboardPage() {
               className="btn-primary text-sm py-1.5">
               <MessageSquare className="w-4 h-4" /> New Chat
             </button>
-            <span className="text-sm text-slate-400 hidden sm:block">{user?.name}</span>
-            <button onClick={logout} className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors" title="Sign out">
-              <LogOut className="w-4 h-4" />
+            
+            {/* User Profile Badge */}
+            <div className="flex items-center gap-2 border border-slate-800 bg-slate-900/50 px-3 py-1.5 rounded-xl">
+              <div className="w-6 h-6 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 flex items-center justify-center font-bold text-xs shrink-0">
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              </div>
+              <span className="text-sm font-medium text-slate-200">
+                {user?.name || 'User'}
+              </span>
+            </div>
+
+            {/* Logout Button */}
+            <button 
+              onClick={logout} 
+              className="flex items-center gap-2 px-3 py-1.5 border border-slate-800 bg-slate-900/50 hover:bg-slate-800/80 rounded-xl hover:border-slate-700 text-slate-300 hover:text-white transition-all duration-200"
+              title="Sign out"
+            >
+              <LogOut className="w-4 h-4 text-slate-400" />
+              <span className="text-sm font-medium text-slate-200">Logout</span>
             </button>
           </div>
         </div>

@@ -1,19 +1,14 @@
-// ─── server/services/vectorSearchService.js ──────────────────────────────────
+// ─── server/utils/vectorSearch.js ──────────────────────────────────────────────
 // MongoDB Atlas Vector Search — finds the most semantically similar chunks
-// Uses the $vectorSearch aggregation stage (Atlas-only feature)
-// ─── server/services/vectorSearchService.js ──────────────────────────────────
-// ─── server/services/vectorSearchService.js ──────────────────────────────────
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Chunk from '../models/Chunk.js';
 import mongoose from 'mongoose';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-// Changed to gemini-embedding-001 (Stable v1)
 const model = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
 
 async function embedQuery(query) {
   try {
-    // Force output to 768 to match your MongoDB Atlas Index
     const result = await model.embedContent({
       content: { parts: [{ text: query }] },
       outputDimensionality: 768,
@@ -25,8 +20,6 @@ async function embedQuery(query) {
 }
 
 async function vectorSearch({ queryVector, userId, documentId, topK = 3 }) {
-
-
   const filter = {
     $and: [
       {
@@ -56,7 +49,6 @@ async function vectorSearch({ queryVector, userId, documentId, topK = 3 }) {
       },
     },
     { $addFields: { score: { $meta: 'vectorSearchScore' } } },
-    // Just list the fields you want (Inclusion-only)
     { $project: { text: 1, metadata: 1, documentId: 1, score: 1 } },
   ];
 
