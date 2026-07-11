@@ -39,6 +39,16 @@ app.use(cors({
   credentials: true,
 }));
 
+// ─── Health Check (Exempt from Rate Limiting) ─────────────────────────────────
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+  });
+});
+
 // ─── Rate Limiting ────────────────────────────────────────────────────────────
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,   // 15 minutes
@@ -74,15 +84,7 @@ app.use('/api/auth',  authRouter);
 app.use('/api/notes', notesRouter);
 app.use('/api/chat',  chatRouter);
 
-// ─── Health Check ─────────────────────────────────────────────────────────────
-app.get('/api/health', (req, res) => {
-  res.json({
-    success: true,
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV,
-  });
-});
+
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.use(notFound);
