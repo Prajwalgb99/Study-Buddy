@@ -4,7 +4,8 @@ import axios from 'axios';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 // ─── Axios instance ───────────────────────────────────────────────────────────
-export const api = axios.create({ baseURL: '/api' });
+const API_URL = import.meta.env.VITE_API_URL || '';
+export const api = axios.create({ baseURL: `${API_URL}/api` });
 
 // Attach JWT to every request automatically
 api.interceptors.request.use((config) => {

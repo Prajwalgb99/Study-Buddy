@@ -123,8 +123,9 @@ export function useChat({ documentId } = {}) {
     try {
       const token = localStorage.getItem('sb_token');
 
+      const API_URL = import.meta.env.VITE_API_URL || '';
       // ── Open the SSE stream ───────────────────────────────────────────────
-      const response = await fetch('/api/chat/stream', {
+      const response = await fetch(`${API_URL}/api/chat/stream`, {
         method:  'POST',
         headers: {
           'Content-Type':  'application/json',
@@ -189,11 +190,15 @@ export function useChat({ documentId } = {}) {
                 break;
 
               case 'error':
-                setError(event.message);
+                const isRateLimit = /exhausted|quota|429|rate limit/i.test(event.message);
+                const displayMsg = isRateLimit 
+                  ? "The study assistant is currently busy handling other requests. Please wait a moment and try again."
+                  : `Sorry, something went wrong: ${event.message}`;
+                setError(displayMsg);
                 setMessages((prev) =>
                   prev.map((m) =>
                     m.id === assistantMsgId
-                      ? { ...m, content: `Sorry, something went wrong: ${event.message}`, isStreaming: false, isError: true }
+                      ? { ...m, content: displayMsg, isStreaming: false, isError: true }
                       : m
                   )
                 );
@@ -212,13 +217,17 @@ export function useChat({ documentId } = {}) {
       if (err.name === 'AbortError') return;  // User cancelled — not an error
 
       console.error('Stream error:', err);
-      setError(err.message);
+      const isRateLimit = /exhausted|quota|429|rate limit/i.test(err.message);
+      const displayMsg = isRateLimit
+        ? "The study assistant is currently busy handling other requests. Please wait a moment and try again."
+        : `Error: ${err.message}`;
+      setError(displayMsg);
 
       // Mark the assistant message as errored
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantMsgId
-            ? { ...m, content: `Error: ${err.message}`, isStreaming: false, isError: true }
+            ? { ...m, content: displayMsg, isStreaming: false, isError: true }
             : m
         )
       );

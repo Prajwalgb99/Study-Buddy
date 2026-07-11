@@ -1,0 +1,26 @@
+# render.yaml (place in repository root for Render deployment)
+services:
+  - type: web
+    name: study-buddy-backend
+    env: node
+    region: oregon
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false # set manually in Render dashboard
+      - key: GEMINI_API_KEY
+        sync: false # set manually in Render dashboard
+      - key: JWT_SECRET
+        sync: false # set manually in Render dashboard
+      - key: CLIENT_URL
+        sync: false # Vercel frontend URL (set manually in Render dashboard)
+      - key: VECTOR_INDEX_NAME
+        value: vector_index
+    healthCheckPath: /api/health

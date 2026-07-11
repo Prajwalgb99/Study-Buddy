@@ -32,7 +32,7 @@ app.use(helmet());
 
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
-    ? ['https://your-production-domain.com']
+    ? (process.env.CLIENT_URL ? [process.env.CLIENT_URL] : ['https://your-production-domain.com'])
     : ['http://localhost:5173', 'http://localhost:3000'],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
